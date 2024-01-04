@@ -19,10 +19,10 @@ def load_img(path, size=None):
     w, h = image.size
     print(f"loaded input image of size ({w}, {h}) from {path}")
     if size is not None:
-        image = image.resize(size, resample=PIL.Image.LANCZOS)
+        image = image.resize(size)
     else:
         w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
-        image = image.resize((w, h), resample=PIL.Image.LANCZOS)
+        image = image.resize((w, h))
     image = np.array(image).astype(np.float32) / 255.0
     image = image[None].transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
@@ -51,6 +51,14 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--prompt",
+        type=str,
+        nargs="?",
+        default="a painting of a virus monster playing guitar",
+        help="the prompt to render"
+    )
+
+    parser.add_argument(
+        "--ori_prompt",
         type=str,
         nargs="?",
         default="a painting of a virus monster playing guitar",
@@ -105,6 +113,19 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--C",
+        type=int,
+        default=4,
+        help="latent channels",
+    )
+    parser.add_argument(
+        "--f",
+        type=int,
+        default=8,
+        help="downsampling factor",
+    )
+
+    parser.add_argument(
         "--n_samples",
         type=int,
         default=4,
@@ -149,10 +170,17 @@ if __name__ == "__main__":
         type=str, 
         help="Path to a pre-trained embedding manager checkpoint")
 
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/latent-diffusion/txt2img-1p4B-eval_with_tokens.yaml",
+        help="path to config which constructs model",
+    )
+
     opt = parser.parse_args()
 
 
-    config = OmegaConf.load("configs/latent-diffusion/txt2img-1p4B-eval_with_tokens.yaml")  # TODO: Optionally download from same location as ckpt and chnage this logic
+    config = OmegaConf.load(opt.config)  # TODO: Optionally download from same location as ckpt and chnage this logic
     model = load_model_from_config(config, opt.ckpt_path)  # TODO: check path
     # pdb.set_trace()
     model.embedding_manager.load(opt.embedding_path)
@@ -169,9 +197,14 @@ if __name__ == "__main__":
     outpath = opt.outdir
 
     prompt = opt.prompt
+    if opt.ori_prompt != prompt:
+        ori_prompt = opt.ori_prompt
+    else:
+        ori_prompt = None
     batch_size = opt.n_samples
 
-    init_image = load_img(opt.init_img, size=(256,256)).to(device)
+    init_image = load_img(opt.init_img, size=(opt.W, opt.H)).to(device)
+
     init_image = repeat(init_image, '1 ... -> b ...', b=batch_size)
     init_latent = model.get_first_stage_encoding(model.encode_first_stage(init_image))  # move to latent space
     t_enc = int(opt.strength * opt.ddim_steps)
@@ -188,26 +221,31 @@ if __name__ == "__main__":
         with model.ema_scope():
             uc = None
             if opt.scale != 1.0:
-                uc, _ = model.get_learned_conditioning(opt.n_samples * [""])
+                uc = model.get_learned_conditioning(opt.n_samples * [""])
             for n in trange(opt.n_iter, desc="Sampling"):
-                c, ori_c = model.get_learned_conditioning(opt.n_samples * [prompt])
+                c = model.get_learned_conditioning(opt.n_samples * [prompt])
+                if ori_prompt is not None:
+                    ori_c = model.get_learned_conditioning(opt.n_samples * [ori_prompt], use_ori=True)
+                else:
+                    ori_c = None
+
                 # pdb.set_trace()
-                shape = [4, opt.H//8, opt.W//8]
+                shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
                 z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
 
-                # samples = sampler.decode(z_enc, c, t_enc, unconditional_guidance_scale=opt.scale,
-                #                                  unconditional_conditioning=uc,)
-
                 c = (1-opt.o_weight) * c + opt.o_weight * ori_c
-                samples_ddim, _ = sampler.sample(S=opt.ddim_steps,
-                                                 x_T=z_enc,
-                                                 conditioning=c,
-                                                 batch_size=opt.n_samples,
-                                                 shape=shape,
-                                                 verbose=False,
-                                                 unconditional_guidance_scale=opt.scale,
-                                                 unconditional_conditioning=uc,
-                                                 eta=opt.ddim_eta)
+                samples_ddim = sampler.decode(z_enc, c, t_enc, unconditional_guidance_scale=opt.scale,
+                                                 unconditional_conditioning=uc,)
+
+                # samples_ddim, _ = sampler.sample(S=opt.ddim_steps,
+                #                                  x_T=z_enc,
+                #                                  conditioning=c,
+                #                                  batch_size=opt.n_samples,
+                #                                  shape=shape,
+                #                                  verbose=False,
+                #                                  unconditional_guidance_scale=opt.scale,
+                #                                  unconditional_conditioning=uc,
+                #                                  eta=opt.ddim_eta)
 
                 x_samples_ddim = model.decode_first_stage(samples_ddim)
                 x_samples_ddim = torch.clamp((x_samples_ddim+1.0)/2.0, min=0.0, max=1.0)
