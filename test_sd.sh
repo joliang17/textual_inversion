@@ -3,7 +3,7 @@
 #SBATCH --job-name=test_lyj
 #SBATCH --output=test_lyj.out.%j
 #SBATCH --error=test_lyj.out.%j
-#SBATCH --time=3:00:00
+#SBATCH --time=12:00:00
 #SBATCH --account=cml-zhou
 #SBATCH --partition=cml-dpart
 #SBATCH --qos=cml-medium
@@ -22,7 +22,7 @@ source /fs/nexus-scratch/yliang17/miniconda3/bin/activate ldm
 python main.py --base configs/stable-diffusion/v1-finetune.yaml \
                -t \
                --actual_resume models/ldm/sd_14/sd-v1-4.ckpt \
-               -n animal_test \
+               -n animal_argus_test \
                --gpus "0," \
-               --data_root "data/Tayassu_pecari/" \
-               --init_word animal
+               --data_root "../data/textual_training/argusianus_argus/" \
+               --init_word bird

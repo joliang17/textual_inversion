@@ -22,7 +22,7 @@ source /fs/nexus-scratch/yliang17/miniconda3/bin/activate ldm
 python main.py --base configs/latent-diffusion/txt2img-1p4B-finetune.yaml \
                -t \
                --actual_resume models/ldm/text2img-large/model.ckpt \
-               -n animal_test \
+               -n argusianus_argus \
                --gpus "0," \
-               --data_root "data/Tayassu_pecari/" \
-               --init_word animal
+               --data_root "../data/train/argusianus_argus/" \
+               --init_word argus

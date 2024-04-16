@@ -40,63 +40,46 @@ run_generation() {
                             --H 256 \
                             --C 4 \
                             --f 8 \
-                            --init_img /fs/nexus-scratch/yliang17/Research/diffusion/gene_diffcls/output/tayassu_pecari/gpt_camera_03/8fa67602-21bc-11ea-a13a-137349068a90.jpg \
-                            --embedding_path logs/Tayassu_pecari2024-01-03T04-53-48_animal_test/checkpoints/embeddings_gs-6099.pt \
+                            --init_img /fs/nexus-scratch/yliang17/Research/diffusion/gene_diffcls/data/test/argusianus_argus/8a6c4cac-21bc-11ea-a13a-137349068a90.jpg \
+                            --embedding_path logs/argusianus_argus2024-01-11T04-59-22_argusianus_argus/checkpoints/embeddings_gs-6099.pt \
                             --config configs/latent-diffusion/txt2img-1p4B-eval_with_tokens.yaml \
                             --ckpt_path models/ldm/text2img-large/model.ckpt \
                             --prompt "a photo of *" \
-                            --ori_prompt "a photo of white-lipped peccary in the wild" \
+                            --ori_prompt "a photo of great argus in the wild" \
                             --outdir "outputs/img2img-samples/${scale_str}_${noise_str}_${o_str}"
 
 }
 
+SCALE=5.0
+SCALE_STR="5"
+O_WEIGHT=1
+O_STR="10"
+
+NOISE=0.3
+NOISE_STR="30"
+run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
 
 NOISE=0.5
 NOISE_STR="50"
-
-SCALE=5.0
-SCALE_STR="5"
-
-O_WEIGHT=0
-O_STR="00"
 run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
 
-O_WEIGHT=0.1
-O_STR="01"
-run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
-
-O_WEIGHT=0.3
-O_STR="03"
-run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
-
-O_WEIGHT=0.5
-O_STR="05"
-run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
-
-O_WEIGHT=0.8
-O_STR="08"
+NOISE=0.8
+NOISE_STR="80"
 run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
 
 
 SCALE=10.0
 SCALE_STR="10"
 
-O_WEIGHT=0
-O_STR="00"
+NOISE=0.3
+NOISE_STR="30"
 run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
 
-O_WEIGHT=0.1
-O_STR="01"
+NOISE=0.5
+NOISE_STR="50"
 run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
 
-O_WEIGHT=0.3
-O_STR="03"
+NOISE=0.8
+NOISE_STR="80"
 run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
 
-O_WEIGHT=0.5
-O_STR="05"
-run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
-
-O_WEIGHT=0.8
-O_STR="08"
-run_generation ${SCALE} ${SCALE_STR} ${O_WEIGHT} ${O_STR} ${NOISE} ${NOISE_STR}
